@@ -1,438 +1,258 @@
-import { useState } from "react";
-import "./App.css";
-import heroImage from "./assets/hero.png";
+import { useState } from 'react'
+import './App.css'
+import { supabase } from './lib/supabaseClient'
 
 function App() {
-  const [page, setPage] = useState("home");
+  const [screen, setScreen] = useState('landing')
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-  });
+  const handleContinue = async (e) => {
+    e.preventDefault()
 
-  const handleChange = (event) => {
-    setFormData({
-      ...formData,
-      [event.target.name]: event.target.value,
-    });
-  };
-
-  const handleSubmit = (event) => {
-    event.preventDefault();
-
-    if (!formData.name.trim() || !formData.email.trim()) {
-      return;
+    if (!name.trim() || !email.trim() || !phone.trim()) {
+      alert('Please complete all fields.')
+      return
     }
 
-    setPage("processing");
+    // Test-only restriction:
+    // use test@example.com and a phone number beginning with 000.
+    const isTestEmail = email.trim().toLowerCase().endsWith('@example.com')
+    const isTestPhone = /^000\d{7}$/.test(phone.trim())
+
+    if (!isTestEmail || !isTestPhone) {
+      alert(
+        'Testing only: use an email ending in @example.com and a 10-digit phone number starting with 000.'
+      )
+      return
+    }
+
+    setSubmitting(true)
+
+    const { error } = await supabase
+      .from('test_user_profiles')
+      .insert({
+        name: name.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
+      })
+
+    setSubmitting(false)
+
+    if (error) {
+      console.error('Supabase insert error:', error)
+      alert('Unable to submit the test entry. Please check the Supabase setup.')
+      return
+    }
+
+    setScreen('processing')
 
     setTimeout(() => {
-      setPage("confirmation");
-    }, 3000);
-  };
-
-  return (
-    <div className="app">
-
-      {/* =========================
-          HOME / LANDING PAGE
-      ========================== */}
-
-      {page === "home" && (
-        <>
-          {/* NAVIGATION */}
-          <header className="topbar">
-
-            <div className="logo">
-              NOVA
-            </div>
-
-            <div className="search-bar">
-              <span className="search-icon">⌕</span>
-
-              <input
-                type="text"
-                placeholder="Search products"
-                readOnly
-              />
-            </div>
-
-            <div className="nav-actions">
-              <button className="nav-icon" aria-label="Language">
-                🌐
-              </button>
-
-              <button className="nav-icon" aria-label="Shopping cart">
-                🛒
-              </button>
-            </div>
-
-          </header>
-
-          {/* MAIN LANDING CONTENT */}
-          <main className="landing">
-
-            {/* HERO SECTION */}
-            <section className="hero">
-
-              {/* LEFT SIDE */}
-              <div className="hero-content">
-
-                <div className="offer-label">
-                  LIMITED-TIME OFFER
-                </div>
-
-                <h1>
-                  Your Special
-                  <br />
-                  Deal Is Waiting
-                </h1>
-
-                <p className="hero-description">
-                  Discover an exclusive offer available for a
-                  limited time. Don't miss your chance to claim
-                  today's special deal.
-                </p>
-
-                <div className="hero-price">
-                  <span className="hero-old-price">
-                    ₱499.00
-                  </span>
-
-                  <span className="hero-new-price">
-                    ₱0.99
-                  </span>
-                </div>
-
-                <button
-                  className="primary-button"
-                  onClick={() => setPage("form")}
-                >
-                  CLAIM OFFER NOW
-                  <span>→</span>
-                </button>
-
-                <div className="availability">
-                  <span className="pulse-dot"></span>
-                  Limited availability today
-                </div>
-
-              </div>
-
-              {/* RIGHT SIDE */}
-              <div className="hero-product">
-
-                <div className="deal-badge">
-                  SPECIAL DEAL
-                </div>
-
-                <div className="hero-image-container">
-
-                  <div className="purple-glow"></div>
-
-                  <img
-                    src={heroImage}
-                    alt="Featured shopping offer"
-                    className="hero-image"
-                  />
-
-                </div>
-
-                <div className="product-info">
-
-                  <h2>
-                    Exclusive Shopping Deal
-                  </h2>
-
-                  <div className="rating">
-                    <span>★★★★★</span>
-                    <strong>4.9</strong>
-                  </div>
-
-                </div>
-
-              </div>
-
-            </section>
-
-            {/* BENEFITS */}
-            <section className="benefits">
-
-              <div className="benefit-card">
-                <div className="benefit-icon">
-                  🚚
-                </div>
-
-                <div>
-                  <h3>Fast Processing</h3>
-
-                  <p>
-                    Quick and easy claim process.
-                  </p>
-                </div>
-              </div>
-
-              <div className="benefit-card">
-                <div className="benefit-icon">
-                  🎁
-                </div>
-
-                <div>
-                  <h3>Exclusive Offers</h3>
-
-                  <p>
-                    Special promotions available today.
-                  </p>
-                </div>
-              </div>
-
-              <div className="benefit-card">
-                <div className="benefit-icon">
-                  🔒
-                </div>
-
-                <div>
-                  <h3>Secure Process</h3>
-
-                  <p>
-                    Your claim is handled securely.
-                  </p>
-                </div>
-              </div>
-
-            </section>
-
-            {/* SMALL PROMOTIONAL SECTION */}
-            <section className="promo-strip">
-
-              <div>
-                <span className="promo-small">
-                  TODAY ONLY
-                </span>
-
-                <h2>
-                  Don't miss today's special offer.
-                </h2>
-              </div>
-
-              <button
-                className="secondary-button"
-                onClick={() => setPage("form")}
-              >
-                Claim Now
-              </button>
-
-            </section>
-
-          </main>
-
-          {/* FOOTER */}
-          <footer className="footer">
-
-            <div className="footer-logo">
-              NOVA
-            </div>
-
-            <p>
-              © 2026 Nova Shopping. All rights reserved.
-            </p>
-
-          </footer>
-        </>
-      )}
-
-      {/* =========================
-          CLAIM FORM
-      ========================== */}
-
-      {page === "form" && (
-        <main className="form-page">
-
-          <div className="form-container">
-
-            <button
-              className="back-button"
-              onClick={() => setPage("home")}
-            >
-              ← Back
-            </button>
-
-            <div className="form-header">
-
-              <div className="form-icon">
-                🎁
-              </div>
-
-              <h1>
-                Claim Your Offer
-              </h1>
-
-              <p>
-                You're one step away from completing
-                your claim. Enter your information below
-                to continue.
-              </p>
-
-            </div>
-
-            <form onSubmit={handleSubmit}>
-
-              <div className="input-group">
-
-                <label htmlFor="name">
-                  Full Name
-                </label>
-
-                <input
-                  id="name"
-                  type="text"
-                  name="name"
-                  placeholder="Enter your full name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  autoComplete="off"
-                  required
-                />
-
-              </div>
-
-              <div className="input-group">
-
-                <label htmlFor="email">
-                  Email Address
-                </label>
-
-                <input
-                  id="email"
-                  type="email"
-                  name="email"
-                  placeholder="Enter your email address"
-                  value={formData.email}
-                  onChange={handleChange}
-                  autoComplete="off"
-                  required
-                />
-
-              </div>
-
-              <div className="privacy-note">
-                Your information is used only for this
-                demonstration and is not transmitted or stored.
-              </div>
-
-              <button
-                type="submit"
-                className="primary-button form-button"
-              >
-                CONTINUE
-                <span>→</span>
-              </button>
-
-            </form>
-
+      setScreen('confirmation')
+    }, 3000)
+  }
+
+  const goHome = () => {
+    setScreen('landing')
+    setName('')
+    setEmail('')
+    setPhone('')
+    setSubmitting(false)
+  }
+
+  if (screen === 'landing') {
+    return (
+      <main className="page-shell">
+        <section className="offer-card">
+          <div className="badge">🎉 EXCLUSIVE LIMITED-TIME OFFER</div>
+
+          <h1>Claim Your Special Deal Today</h1>
+
+          <p className="lead">
+            Get access to an exclusive offer available for a limited time.
+          </p>
+
+          <div className="price-area">
+            <div className="special-price">₱0.99</div>
+            <div className="regular-price">₱499.00</div>
           </div>
 
-        </main>
-      )}
+          <div className="limited">⏳ Limited availability</div>
 
-      {/* =========================
-          PROCESSING PAGE
-      ========================== */}
+          <button
+            className="primary-button"
+            onClick={() => setScreen('claim')}
+          >
+            CLAIM OFFER NOW
+          </button>
 
-      {page === "processing" && (
-        <main className="status-page">
+          <div className="why-section">
+            <h2>Why claim now?</h2>
 
-          <div className="status-container">
-
-            <div className="loading-circle"></div>
-
-            <h1>
-              Processing Your Claim
-            </h1>
-
-            <p className="status-description">
-              Please wait while we process your request.
-            </p>
-
-            <div className="status-box">
-
-              <span>
-                Claim Status
-              </span>
-
-              <strong>
-                Processing
-              </strong>
-
+            <div className="benefits">
+              <div>✓ Exclusive promotional price</div>
+              <div>✓ Limited daily availability</div>
+              <div>✓ Fast claim verification</div>
+              <div>✓ Available for a limited time</div>
             </div>
-
-            <p className="status-small">
-              This may take a few moments.
-              Please keep this page open.
-            </p>
-
           </div>
 
-        </main>
-      )}
+          <p className="fine-print">Offer availability may vary.</p>
+        </section>
+      </main>
+    )
+  }
 
-      {/* =========================
-          CONFIRMATION PAGE
-      ========================== */}
+  if (screen === 'claim') {
+    return (
+      <main className="page-shell">
+        <section className="form-card">
+          <button
+            className="back-button"
+            onClick={() => setScreen('landing')}
+            type="button"
+          >
+            ← Back
+          </button>
 
-      {page === "confirmation" && (
-        <main className="status-page">
+          <div className="step-label">STEP 1 OF 2</div>
 
-          <div className="status-container confirmation">
+          <h1>Claim Your Offer</h1>
 
-            <div className="success-icon">
-              ✓
-            </div>
+          <p className="lead">
+            You're one step away from completing your claim.
+          </p>
 
-            <h1>
-              Your Claim Has Been Submitted!
-            </h1>
+          <form onSubmit={handleContinue}>
+            <label htmlFor="name">Full Name</label>
 
-            <p className="status-description">
-              Thank you for completing the claim process.
-            </p>
+            <input
+              id="name"
+              type="text"
+              placeholder="Enter your full name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              autoComplete="off"
+              disabled={submitting}
+            />
 
-            <div className="status-box success-box">
+            <label htmlFor="email">Email Address</label>
 
-              <span>
-                Claim Status
-              </span>
+            <input
+              id="email"
+              type="email"
+              placeholder="Enter your email address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="off"
+              disabled={submitting}
+            />
 
-              <strong>
-                ✓ Submitted
-              </strong>
+            <label htmlFor="phone">Phone Number</label>
 
-            </div>
+            <input
+              id="phone"
+              type="tel"
+              placeholder="0001234567"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              autoComplete="off"
+              disabled={submitting}
+            />
 
-            <p className="notification-text">
-              Please allow a few hours for processing.
-              You will be notified once your offer becomes
-              available to claim within today.
-            </p>
-
-            <p className="email-message">
-              📩 Keep an eye on your email for updates.
+            <p className="accuracy-note">
+              For testing, use a dummy email ending in @example.com and a
+              phone number beginning with 000.
             </p>
 
             <button
               className="primary-button"
-              onClick={() => setPage("home")}
+              type="submit"
+              disabled={submitting}
             >
-              BACK TO HOME
+              {submitting ? 'SUBMITTING...' : 'CONTINUE'}
             </button>
+          </form>
+        </section>
+      </main>
+    )
+  }
 
+  if (screen === 'processing') {
+    return (
+      <main className="page-shell">
+        <section className="status-card">
+          <div className="spinner" />
+
+          <div className="step-label">STEP 2 OF 2</div>
+
+          <h1>Processing Your Claim</h1>
+
+          <p className="wait-label">⏳ Please wait...</p>
+
+          <p className="lead">
+            We're currently processing your request.
+          </p>
+
+          <p className="processing-copy">
+            Please wait a few minutes while we process your submission.
+          </p>
+
+          <div className="status-box">
+            <div className="status-heading">Claim Status</div>
+            <div className="status-value">Processing</div>
           </div>
 
-        </main>
-      )}
+          <p className="processing-copy">
+            We'll notify you once there's an update.
+          </p>
+        </section>
+      </main>
+    )
+  }
 
-    </div>
-  );
+  return (
+    <main className="page-shell">
+      <section className="status-card confirmation">
+        <div className="success-icon">✓</div>
+
+        <h1>Your Claim Has Been Submitted! 🎉</h1>
+
+        <p className="lead">
+          Thank you for completing the claim process.
+        </p>
+
+        <p className="processing-copy">
+          Your submission has been received successfully.
+        </p>
+
+        <div className="next-section">
+          <h2>What happens next?</h2>
+
+          <p className="processing-copy">
+            Please wait a few minutes while we process your request. We'll
+            notify you once there's an update.
+          </p>
+        </div>
+
+        <div className="status-box submitted">
+          <div className="status-heading">Claim Status</div>
+          <div className="status-value">✓ Submitted</div>
+        </div>
+
+        <div className="estimate">
+          <span>Estimated update</span>
+          <strong>Within a few minutes</strong>
+        </div>
+
+        <button className="primary-button" onClick={goHome} type="button">
+          BACK TO HOME
+        </button>
+      </section>
+    </main>
+  )
 }
 
-export default App;
+export default App

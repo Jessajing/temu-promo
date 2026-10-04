@@ -1,0 +1,191 @@
+import { useState } from 'react'
+import { supabase } from './lib/supabaseClient'
+import './App.css'
+
+function App() {
+  const [step, setStep] = useState('landing')
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+  })
+  const [error, setError] = useState('')
+
+  const handleChange = (event) => {
+    setForm({
+      ...form,
+      [event.target.name]: event.target.value,
+    })
+  }
+
+  const handleClaim = async (event) => {
+    event.preventDefault()
+    setError('')
+
+    if (!form.name.trim() || !form.email.trim()) {
+      setError('Please enter the test name and test email.')
+      return
+    }
+
+    setStep('processing')
+
+    const { error: insertError } = await supabase
+      .from('test_claims')
+      .insert({
+        test_name: form.name.trim(),
+        test_email: form.email.trim(),
+      })
+
+    if (insertError) {
+      console.error(insertError)
+      setError('Something went wrong while processing your test submission.')
+      setStep('claim')
+      return
+    }
+
+    setTimeout(() => {
+      setStep('confirmation')
+    }, 1800)
+  }
+
+  const startClaim = () => {
+    setError('')
+    setStep('claim')
+  }
+
+  const reset = () => {
+    setForm({
+      name: '',
+      email: '',
+    })
+    setError('')
+    setStep('landing')
+  }
+
+  return (
+    <main className="app">
+      <div className="simulation-banner">
+        TEST / SECURITY-AWARENESS SIMULATION
+      </div>
+
+      <section className="card">
+        {step === 'landing' && (
+          <>
+            <div className="logo">TEMU-PROMO</div>
+
+            <span className="badge">SIMULATION</span>
+
+            <h1>Promotional Claim Test</h1>
+
+            <p className="subtitle">
+              This is a fictional promotional-flow simulation for testing
+              website forms and database integration.
+            </p>
+
+            <div className="promo-box">
+              <strong>Test Promotion</strong>
+              <span>Practice the complete claim process.</span>
+            </div>
+
+            <button className="primary-button" onClick={startClaim}>
+              Start Test Claim
+            </button>
+
+            <p className="small-text">
+              Please use test information only.
+            </p>
+          </>
+        )}
+
+        {step === 'claim' && (
+          <>
+            <div className="logo">TEMU-PROMO</div>
+
+            <span className="badge">TEST CLAIM</span>
+
+            <h1>Enter Test Information</h1>
+
+            <p className="subtitle">
+              Use fictional information such as Test User and
+              test@example.com.
+            </p>
+
+            <form onSubmit={handleClaim}>
+              <label htmlFor="name">Test name</label>
+              <input
+                id="name"
+                name="name"
+                type="text"
+                placeholder="Test User"
+                value={form.name}
+                onChange={handleChange}
+                autoComplete="off"
+              />
+
+              <label htmlFor="email">Test email</label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="test@example.com"
+                value={form.email}
+                onChange={handleChange}
+                autoComplete="off"
+              />
+
+              {error && <p className="error">{error}</p>}
+
+              <button className="primary-button" type="submit">
+                Submit Test Claim
+              </button>
+            </form>
+
+            <button className="back-button" onClick={() => setStep('landing')}>
+              Back
+            </button>
+          </>
+        )}
+
+        {step === 'processing' && (
+          <div className="center-content">
+            <div className="spinner"></div>
+
+            <h1>Processing Test Claim</h1>
+
+            <p className="subtitle">
+              Saving the test submission to the database...
+            </p>
+          </div>
+        )}
+
+        {step === 'confirmation' && (
+          <div className="center-content">
+            <div className="success-icon">✓</div>
+
+            <span className="badge">TEST COMPLETE</span>
+
+            <h1>Submission Recorded</h1>
+
+            <p className="subtitle">
+              Your fictional test submission was successfully stored in the
+              Supabase test database.
+            </p>
+
+            <div className="summary">
+              <strong>Test name</strong>
+              <span>{form.name}</span>
+
+              <strong>Test email</strong>
+              <span>{form.email}</span>
+            </div>
+
+            <button className="primary-button" onClick={reset}>
+              Run Another Test
+            </button>
+          </div>
+        )}
+      </section>
+    </main>
+  )
+}
+
+export default App
