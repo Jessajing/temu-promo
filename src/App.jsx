@@ -4,46 +4,60 @@ import { supabase } from './lib/supabaseClient'
 
 function App() {
   const [screen, setScreen] = useState('landing')
+
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
+
   const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
 
-  const handleContinue = async (e) => {
-    e.preventDefault()
+  const isValidPhilippinePhone = (value) => {
+    const cleaned = value.replace(/\s|-/g, '')
 
-    if (!name.trim() || !email.trim() || !phone.trim()) {
-      alert('Please complete all fields.')
+    return (
+      /^09\d{9}$/.test(cleaned) ||
+      /^\+639\d{9}$/.test(cleaned)
+    )
+  }
+
+  const handleContinue = async (event) => {
+    event.preventDefault()
+    setError('')
+
+    const cleanName = name.trim()
+    const cleanEmail = email.trim()
+    const cleanPhone = phone.replace(/\s|-/g, '')
+
+    if (!cleanName || !cleanEmail || !cleanPhone) {
+      setError('Please complete all fields.')
       return
     }
 
-    // Test-only restriction:
-    // use test@example.com and a phone number beginning with 000.
-    const isTestEmail = email.trim().toLowerCase().endsWith('@example.com')
-    const isTestPhone = /^000\d{7}$/.test(phone.trim())
-
-    if (!isTestEmail || !isTestPhone) {
-      alert(
-        'Testing only: use an email ending in @example.com and a 10-digit phone number starting with 000.'
+    if (!isValidPhilippinePhone(cleanPhone)) {
+      setError(
+        'Please enter a valid Philippine mobile number, such as 09171234567 or +639171234567.'
       )
       return
     }
 
     setSubmitting(true)
 
-    const { error } = await supabase
+    const { error: insertError } = await supabase
       .from('test_user_profiles')
       .insert({
-        name: name.trim(),
-        email: email.trim(),
-        phone: phone.trim(),
+        name: cleanName,
+        email: cleanEmail,
+        phone: cleanPhone,
       })
 
     setSubmitting(false)
 
-    if (error) {
-      console.error('Supabase insert error:', error)
-      alert('Unable to submit the test entry. Please check the Supabase setup.')
+    if (insertError) {
+      console.error('Supabase error:', insertError)
+      setError(
+        'We could not submit your information right now. Please try again.'
+      )
       return
     }
 
@@ -51,7 +65,7 @@ function App() {
 
     setTimeout(() => {
       setScreen('confirmation')
-    }, 3000)
+    }, 2500)
   }
 
   const goHome = () => {
@@ -60,13 +74,16 @@ function App() {
     setEmail('')
     setPhone('')
     setSubmitting(false)
+    setError('')
   }
 
   if (screen === 'landing') {
     return (
       <main className="page-shell">
         <section className="offer-card">
-          <div className="badge">🎉 EXCLUSIVE LIMITED-TIME OFFER</div>
+          <div className="badge">
+            🎉 EXCLUSIVE LIMITED-TIME OFFER
+          </div>
 
           <h1>Claim Your Special Deal Today</h1>
 
@@ -79,11 +96,14 @@ function App() {
             <div className="regular-price">₱499.00</div>
           </div>
 
-          <div className="limited">⏳ Limited availability</div>
+          <div className="limited">
+            ⏳ Limited availability
+          </div>
 
           <button
             className="primary-button"
             onClick={() => setScreen('claim')}
+            type="button"
           >
             CLAIM OFFER NOW
           </button>
@@ -99,7 +119,9 @@ function App() {
             </div>
           </div>
 
-          <p className="fine-print">Offer availability may vary.</p>
+          <p className="fine-print">
+            Offer availability may vary.
+          </p>
         </section>
       </main>
     )
@@ -117,7 +139,9 @@ function App() {
             ← Back
           </button>
 
-          <div className="step-label">STEP 1 OF 2</div>
+          <div className="step-label">
+            STEP 1 OF 2
+          </div>
 
           <h1>Claim Your Offer</h1>
 
@@ -126,46 +150,62 @@ function App() {
           </p>
 
           <form onSubmit={handleContinue}>
-            <label htmlFor="name">Full Name</label>
+            <label htmlFor="name">
+              Full Name
+            </label>
 
             <input
               id="name"
               type="text"
               placeholder="Enter your full name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
-              autoComplete="off"
+              onChange={(event) => setName(event.target.value)}
+              autoComplete="name"
               disabled={submitting}
+              required
             />
 
-            <label htmlFor="email">Email Address</label>
+            <label htmlFor="email">
+              Email Address
+            </label>
 
             <input
               id="email"
               type="email"
               placeholder="Enter your email address"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="off"
+              onChange={(event) => setEmail(event.target.value)}
+              autoComplete="email"
               disabled={submitting}
+              required
             />
 
-            <label htmlFor="phone">Phone Number</label>
+            <label htmlFor="phone">
+              Phone Number
+            </label>
 
             <input
               id="phone"
               type="tel"
-              placeholder="0001234567"
+              placeholder="09XXXXXXXXX"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              autoComplete="off"
+              onChange={(event) => setPhone(event.target.value)}
+              autoComplete="tel"
+              inputMode="tel"
               disabled={submitting}
+              required
             />
 
             <p className="accuracy-note">
-              For testing, use a dummy email ending in @example.com and a
-              phone number beginning with 000.
+              By continuing, you agree that the information you provide will
+              be submitted to process your request.
             </p>
+
+            {error && (
+              <p className="error-message">
+                {error}
+              </p>
+            )}
 
             <button
               className="primary-button"
@@ -186,11 +226,15 @@ function App() {
         <section className="status-card">
           <div className="spinner" />
 
-          <div className="step-label">STEP 2 OF 2</div>
+          <div className="step-label">
+            STEP 2 OF 2
+          </div>
 
           <h1>Processing Your Claim</h1>
 
-          <p className="wait-label">⏳ Please wait...</p>
+          <p className="wait-label">
+            ⏳ Please wait...
+          </p>
 
           <p className="lead">
             We're currently processing your request.
@@ -201,8 +245,13 @@ function App() {
           </p>
 
           <div className="status-box">
-            <div className="status-heading">Claim Status</div>
-            <div className="status-value">Processing</div>
+            <div className="status-heading">
+              Claim Status
+            </div>
+
+            <div className="status-value">
+              Processing
+            </div>
           </div>
 
           <p className="processing-copy">
@@ -216,38 +265,62 @@ function App() {
   return (
     <main className="page-shell">
       <section className="status-card confirmation">
-        <div className="success-icon">✓</div>
+        <div className="success-icon">
+          ✓
+        </div>
 
-        <h1>Your Claim Has Been Submitted! 🎉</h1>
+        <h1>
+          Thank You! 🎉
+        </h1>
 
         <p className="lead">
-          Thank you for completing the claim process.
-        </p>
-
-        <p className="processing-copy">
           Your submission has been received successfully.
         </p>
 
+        <p className="processing-copy">
+          Please wait a few minutes while we process your request.
+          We'll notify you once there's an update.
+        </p>
+
         <div className="next-section">
-          <h2>What happens next?</h2>
+          <h2>
+            What happens next?
+          </h2>
 
           <p className="processing-copy">
-            Please wait a few minutes while we process your request. We'll
-            notify you once there's an update.
+            Your submission is now being processed.
+          </p>
+
+          <p className="email-reminder">
+            📩 Keep an eye on your email for updates.
           </p>
         </div>
 
         <div className="status-box submitted">
-          <div className="status-heading">Claim Status</div>
-          <div className="status-value">✓ Submitted</div>
+          <div className="status-heading">
+            Claim Status
+          </div>
+
+          <div className="status-value">
+            ✓ Submitted
+          </div>
         </div>
 
         <div className="estimate">
-          <span>Estimated update</span>
-          <strong>Within a few minutes</strong>
+          <span>
+            Estimated update
+          </span>
+
+          <strong>
+            Within a few minutes
+          </strong>
         </div>
 
-        <button className="primary-button" onClick={goHome} type="button">
+        <button
+          className="primary-button"
+          onClick={goHome}
+          type="button"
+        >
           BACK TO HOME
         </button>
       </section>
